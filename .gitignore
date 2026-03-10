@@ -36,3 +36,5 @@ Thumbs.db
 
 # Docker
 *.log
+fix_and_setup.py
+setup_shared.py

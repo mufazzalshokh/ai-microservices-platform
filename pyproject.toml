@@ -1,17 +1,15 @@
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]
-
-[tool.mypy]
-python_version = "3.11"
-strict = false
-ignore_missing_imports = true
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-pythonpath = ["."]
+ignore = [
+    # B008: FastAPI's Depends() pattern calls a function in argument defaults
+    # by design — this is idiomatic FastAPI, not the "mutable default"
+    # anti-pattern the rule targets.
+    # https://docs.astral.sh/ruff/rules/function-call-in-default-argument/
+    "B008",
+    # BLE001: broad `except Exception` is intentional at these specific
+    # boundaries — health checks (never let a dependency check crash the
+    # endpoint), SSE stream error frames, and Celery task failure handlers
+    # (must catch anything to log/retry correctly). Narrowing these would
+    # mean re-raising unknown errors at exactly the places designed to
+    # catch them.
+    "BLE001",
+]

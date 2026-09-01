@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from celery import Task
@@ -98,7 +97,7 @@ def process_document(self, document_id: str, user_id: str) -> dict[str, Any]:
         )
         update_document_status(document_id, "failed")
         # Retry with exponential backoff
-        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 30)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 30) from exc
 
 
 @celery_app.task(
@@ -117,4 +116,4 @@ def delete_document_chunks(self, document_id: str) -> dict[str, Any]:
         logger.info("delete_chunks_complete", document_id=document_id)
         return {"document_id": document_id, "chunks_deleted": True}
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=30)
+        raise self.retry(exc=exc, countdown=30) from exc

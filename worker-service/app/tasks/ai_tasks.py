@@ -62,7 +62,7 @@ def generate_document_summary(
             document_id=document_id,
             error=str(exc),
         )
-        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60) from exc
 
 
 @celery_app.task(

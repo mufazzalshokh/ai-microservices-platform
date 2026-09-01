@@ -3,10 +3,9 @@ from __future__ import annotations
 import uuid
 
 from openai import AsyncOpenAI
-from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.logging import get_logger
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
 from app.models import Document, DocumentChunk
@@ -51,7 +50,7 @@ class VectorStore:
         embeddings = await self._generate_embeddings(chunks)
 
         db_chunks: list[DocumentChunk] = []
-        for idx, (content, embedding) in enumerate(zip(chunks, embeddings)):
+        for idx, (content, embedding) in enumerate(zip(chunks, embeddings, strict=True)):
             chunk = DocumentChunk(
                 document_id=document.id,
                 chunk_index=idx,

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-
 from shared.exceptions import AppException
 from shared.models import APIResponse, TokenPayload
 
@@ -184,7 +183,7 @@ async def render_and_infer(
     try:
         rendered = pm.render(request.template_name, request.variables)
     except (ValueError, AppException) as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     chat_request = ChatRequest(
         messages=[Message(role="user", content=rendered)],

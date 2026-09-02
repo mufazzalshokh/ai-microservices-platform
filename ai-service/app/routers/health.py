@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-
 from shared.models import HealthResponse
 
 from app.config import Settings, get_settings

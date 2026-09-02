@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
 from shared.auth import decode_token
 from shared.exceptions import AuthenticationError
 from shared.models import TokenPayload

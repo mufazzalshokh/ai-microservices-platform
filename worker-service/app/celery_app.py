@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from celery import Celery
 from celery.signals import worker_ready, worker_shutdown
-
 from shared.logging import configure_logging, get_logger
 
 from app.config import get_settings

@@ -31,12 +31,12 @@ def test_chunk_overlap_creates_shared_content(chunk_text):
 
 
 def test_extract_utf8_text(extract_text_from_bytes):
-    result = extract_text_from_bytes("Hello world".encode("utf-8"), "text/plain")
+    result = extract_text_from_bytes(b"Hello world", "text/plain")
     assert result == "Hello world"
 
 
 def test_extract_markdown(extract_text_from_bytes):
-    result = extract_text_from_bytes("# Title\n\nSome content".encode("utf-8"), "text/markdown")
+    result = extract_text_from_bytes(b"# Title\n\nSome content", "text/markdown")
     assert "Title" in result
 
 

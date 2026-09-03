@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from pydantic import Field
-
 from shared.models import AppModel
-
 
 # ── Request schemas ───────────────────────────────────────────────────────────
 

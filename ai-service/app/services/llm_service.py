@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 
 from openai import AsyncOpenAI
-
 from shared.exceptions import ServiceUnavailableError, ValidationError
 from shared.logging import get_logger
 

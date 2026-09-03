@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime
 
 from pydantic import EmailStr, Field, field_validator
-
 from shared.models import AppModel
 
 

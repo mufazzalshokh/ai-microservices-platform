@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import sys
-import types
-import importlib.util
+
 import pytest
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

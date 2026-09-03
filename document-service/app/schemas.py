@@ -4,9 +4,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import Field
-
 from shared.models import AppModel
-
 
 # ── Response schemas ──────────────────────────────────────────────────────────
 

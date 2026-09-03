@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
 from shared.exceptions import NotFoundError, ValidationError
 from shared.logging import get_logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
-from app.models import Document, DocumentChunk
-from app.schemas import DocumentResponse, SearchResult
+from app.models import Document
+from app.schemas import SearchResult
 from app.services.chunker import chunk_text, extract_text_from_bytes
 from app.services.vector_store import VectorStore
 

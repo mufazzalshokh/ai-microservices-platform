@@ -3,9 +3,6 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.auth import (
     create_access_token,
     create_refresh_token,
@@ -16,6 +13,8 @@ from shared.auth import (
 )
 from shared.exceptions import AuthenticationError, NotFoundError, ValidationError
 from shared.logging import get_logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
 from app.models import RefreshToken, User

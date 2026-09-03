@@ -10,10 +10,9 @@ from shared.exceptions import AppException
 from shared.logging import configure_logging, get_logger
 
 from app.config import get_settings
-from app.routers import auth, health
+from app.routers import health, inference
 
 settings = get_settings()
-
 configure_logging(level=settings.log_level, service_name=settings.service_name)
 logger = get_logger(__name__)
 
@@ -24,15 +23,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         "service_starting",
         service=settings.service_name,
         version=settings.version,
-        environment=settings.environment,
+        model=settings.llm_model,
     )
     yield
     logger.info("service_stopping", service=settings.service_name)
 
 
 app = FastAPI(
-    title="API Gateway",
-    description="Authentication and routing for the AI Microservices Platform",
+    title="AI Service",
+    description="LLM inference, streaming responses, and prompt management",
     version=settings.version,
     lifespan=lifespan,
 )
@@ -70,7 +69,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 app.include_router(health.router)
-app.include_router(auth.router, prefix="/api/v1")
+app.include_router(inference.router, prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)

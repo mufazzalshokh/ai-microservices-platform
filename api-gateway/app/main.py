@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
 from shared.exceptions import AppException
 from shared.logging import configure_logging, get_logger
 

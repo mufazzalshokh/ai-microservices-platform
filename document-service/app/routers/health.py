@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+from shared.models import HealthResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from shared.models import HealthResponse
 
 from app.config import Settings, get_settings
 from app.database import get_db

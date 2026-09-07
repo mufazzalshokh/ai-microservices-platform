@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import NoReturn
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from shared.exceptions import AppException
 from shared.models import APIResponse, TokenPayload
@@ -7,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
 from app.database import get_db
-from app.middleware.auth import require_auth
+from app.middleware.auth import require_scopes
 from app.schemas import (
     LoginRequest,
     RefreshRequest,
@@ -27,7 +29,7 @@ def _get_service(
     return AuthService(db=db, settings=settings)
 
 
-def _raise(exc: AppException) -> None:
+def _raise(exc: AppException) -> NoReturn:
     raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
 
@@ -107,7 +109,7 @@ async def logout(
     summary="Get current authenticated user",
 )
 async def me(
-    token_payload: TokenPayload = Depends(require_auth),
+    token_payload: TokenPayload = Depends(require_scopes("profile:read")),
     service: AuthService = Depends(_get_service),
 ) -> APIResponse[UserResponse]:
     try:

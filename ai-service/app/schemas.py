@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import Field
 from shared.models import AppModel
 
@@ -7,7 +9,7 @@ from shared.models import AppModel
 
 class Message(AppModel):
     """A single message in a conversation."""
-    role: str = Field(pattern="^(system|user|assistant)$")
+    role: Literal["system", "user", "assistant"]
     content: str = Field(min_length=1, max_length=32000)
 
 

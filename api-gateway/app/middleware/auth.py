@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from shared.auth import decode_token
-from shared.exceptions import AuthenticationError
+from shared.auth import check_scopes, decode_token
+from shared.exceptions import AuthenticationError, AuthorizationError
 from shared.models import TokenPayload
 
 from app.config import Settings, get_settings
@@ -25,8 +25,9 @@ async def require_auth(
     try:
         return decode_token(
             credentials.credentials,
-            settings.jwt_secret_key,
-            settings.jwt_algorithm,
+            settings.public_key,
+            issuer=settings.jwt_issuer,
+            audience=settings.jwt_audience,
             expected_type="access",
         )
     except AuthenticationError as exc:
@@ -35,3 +36,13 @@ async def require_auth(
             detail=exc.message,
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+
+def require_scopes(*scopes: str):
+    async def dependency(payload: TokenPayload = Depends(require_auth)) -> TokenPayload:
+        try:
+            check_scopes(payload, *scopes)
+        except AuthorizationError as exc:
+            raise HTTPException(status_code=403, detail="Insufficient scope") from exc
+        return payload
+    return dependency

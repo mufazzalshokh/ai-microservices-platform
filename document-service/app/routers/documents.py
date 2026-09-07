@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import NoReturn
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from shared.exceptions import AppException
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
 from app.database import get_db
-from app.middleware.auth import require_auth
+from app.middleware.auth import require_scopes
 from app.schemas import DocumentResponse, SearchRequest, SearchResult
 from app.services.document_service import DocumentService
 
@@ -23,7 +24,7 @@ def _get_service(
     return DocumentService(db=db, settings=settings)
 
 
-def _raise(exc: AppException) -> None:
+def _raise(exc: AppException) -> NoReturn:
     raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
 
@@ -35,7 +36,7 @@ def _raise(exc: AppException) -> None:
 )
 async def upload_document(
     file: UploadFile = File(...),
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("documents:write")),
     service: DocumentService = Depends(_get_service),
 ) -> APIResponse[DocumentResponse]:
     """
@@ -74,7 +75,7 @@ async def upload_document(
     summary="List all documents for the authenticated user",
 )
 async def list_documents(
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("documents:read")),
     service: DocumentService = Depends(_get_service),
 ) -> APIResponse[list[DocumentResponse]]:
     documents = await service.list_documents(uuid.UUID(token.sub))
@@ -100,7 +101,7 @@ async def list_documents(
 )
 async def get_document(
     document_id: uuid.UUID,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("documents:read")),
     service: DocumentService = Depends(_get_service),
 ) -> APIResponse[DocumentResponse]:
     try:
@@ -126,7 +127,7 @@ async def get_document(
 )
 async def delete_document(
     document_id: uuid.UUID,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("documents:write")),
     service: DocumentService = Depends(_get_service),
 ) -> APIResponse[None]:
     try:
@@ -143,7 +144,7 @@ async def delete_document(
 )
 async def search_documents(
     payload: SearchRequest,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("documents:search")),
     service: DocumentService = Depends(_get_service),
 ) -> APIResponse[list[SearchResult]]:
     """

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
+from shared.config import VerificationSettings
 
 
-class Settings(BaseSettings):
+class Settings(VerificationSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -34,8 +35,6 @@ class Settings(BaseSettings):
         )
 
     # JWT (for verifying tokens issued by api-gateway)
-    jwt_secret_key: str
-    jwt_algorithm: str = "HS256"
 
     # OpenAI (for generating embeddings)
     openai_api_key: str = "sk-placeholder"

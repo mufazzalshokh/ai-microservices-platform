@@ -42,6 +42,10 @@ class TokenPayload(AppModel):
     exp: int
     iat: int
     type: str
+    iss: str
+    aud: str
+    jti: str = Field(min_length=1)
+    scope: str
 
 
 class UserPublic(AppModel):

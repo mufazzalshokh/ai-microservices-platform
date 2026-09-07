@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from shared.auth import (
+    DEFAULT_SCOPES,
     create_access_token,
     create_refresh_token,
     decode_token,
@@ -64,14 +65,15 @@ class AuthService:
     async def refresh(self, refresh_token_str: str) -> TokenResponse:
         payload = decode_token(
             refresh_token_str,
-            self._settings.jwt_secret_key,
-            self._settings.jwt_algorithm,
+            self._settings.public_key,
+            issuer=self._settings.jwt_issuer,
+            audience=self._settings.jwt_audience,
             expected_type="refresh",
         )
 
         token_hash = hash_refresh_token(refresh_token_str)
         stored = await self._db.scalar(
-            select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
         )
         if not stored:
             raise AuthenticationError("Refresh token not found or already used")
@@ -92,7 +94,7 @@ class AuthService:
     async def logout(self, refresh_token_str: str) -> None:
         token_hash = hash_refresh_token(refresh_token_str)
         stored = await self._db.scalar(
-            select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
         )
         if stored:
             await self._db.delete(stored)
@@ -109,15 +111,18 @@ class AuthService:
         access_token = create_access_token(
             user_id=user_id_str,
             email=user.email,
-            secret=self._settings.jwt_secret_key,
-            algorithm=self._settings.jwt_algorithm,
+            private_key=self._settings.private_key,
+            issuer=self._settings.jwt_issuer,
+            audience=self._settings.jwt_audience,
             expires_minutes=self._settings.jwt_access_token_expire_minutes,
+            scopes=DEFAULT_SCOPES,
         )
         refresh_token = create_refresh_token(
             user_id=user_id_str,
             email=user.email,
-            secret=self._settings.jwt_secret_key,
-            algorithm=self._settings.jwt_algorithm,
+            private_key=self._settings.private_key,
+            issuer=self._settings.jwt_issuer,
+            audience=self._settings.jwt_audience,
             expires_days=self._settings.jwt_refresh_token_expire_days,
         )
         expires_at = datetime.now(UTC) + timedelta(

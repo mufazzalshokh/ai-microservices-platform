@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cached_property, lru_cache
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
+from shared.config import VerificationSettings
 
 
-class Settings(BaseSettings):
+class Settings(VerificationSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -36,9 +37,26 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://redis:6379/0"
 
-    # JWT
-    jwt_secret_key: str
-    jwt_algorithm: str = "HS256"
+    # JWT signing material belongs only to the issuer.
+    jwt_private_key_path: str = "keys/jwt-private.pem"
+
+    @cached_property
+    def private_key(self) -> str:
+        from pathlib import Path
+
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from shared.auth import public_key_id
+        material = Path(self.jwt_private_key_path).read_text(encoding="utf-8")
+        key = serialization.load_pem_private_key(material.encode(), password=None)
+        if not isinstance(key, rsa.RSAPrivateKey):
+            raise ValueError("RSA private key required")
+        public = key.public_key().public_bytes(serialization.Encoding.PEM,
+                                               serialization.PublicFormat.SubjectPublicKeyInfo).decode()
+        if public_key_id(public) != public_key_id(self.public_key):
+            raise ValueError("Signing and verification keys do not match")
+        return material
+
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 

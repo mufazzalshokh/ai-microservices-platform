@@ -38,3 +38,9 @@ Thumbs.db
 *.log
 fix_and_setup.py
 setup_shared.py
+
+# Local signing and verification material
+keys/
+*.pem
+.ruff_cache/
+test-results.xml

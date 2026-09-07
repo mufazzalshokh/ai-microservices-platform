@@ -20,6 +20,9 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Fail startup if verification material is missing or invalid.
+    _ = settings.public_key
+    _ = settings.private_key
     logger.info(
         "service_starting",
         service=settings.service_name,
@@ -32,7 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="API Gateway",
-    description="Authentication and routing for the AI Microservices Platform",
+    description="Authentication and token issuance for the AI Microservices Platform",
     version=settings.version,
     lifespan=lifespan,
 )
@@ -71,6 +74,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
+
+
+@app.get("/.well-known/jwks.json")
+async def jwks() -> dict[str, list[dict[str, str]]]:
+    from shared.auth import public_jwk
+    return {"keys": [public_jwk(settings.public_key)]}
 
 
 @app.get("/", include_in_schema=False)

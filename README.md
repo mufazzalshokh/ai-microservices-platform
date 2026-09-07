@@ -158,6 +158,8 @@ python scripts/check.py
 python -m pytest tests/ -q
 python -m ruff check .
 docker compose --env-file .env.example --profile examples config --quiet
+# Requires a running local Docker engine and Docker Compose 2.24.4+:
+python scripts/smoke.py
 ```
 
 `check.py` compiles Python, runs Ruff, checks shared/scripts and each service separately
@@ -169,7 +171,15 @@ Tests generate temporary RSA keys and need no real provider key, database, or Re
 GitHub Actions and GitLab CI use the same Python gate plus Compose validation and
 image builds. GitLab's container job needs a privileged Docker-in-Docker runner with
 a shared `/certs/client` volume for TLS certificates. No provider secrets are required.
-CI definitions alone do not establish that hosted pipelines passed.
+GitHub also runs `scripts/smoke.py`: it creates temporary keys, a unique Compose
+project, private database volumes and an internal network with no published ports.
+It checks service/worker health, nginx, login, concurrent refresh/replay, document
+upload/search/ownership, MCP tools, and concurrent agent requests. A local deterministic
+OpenAI-compatible fixture supplies embeddings and tool-calling responses; no real
+provider key or paid calls are used. This verifies integration, not model quality.
+Only that run's containers and volumes are removed afterward; the local `.env` and
+existing stacks are untouched. GitLab currently validates/builds containers without
+this runtime suite. CI definitions alone do not establish that hosted pipelines passed.
 
 ## Limitations
 

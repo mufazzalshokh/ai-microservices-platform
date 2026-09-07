@@ -1,0 +1,41 @@
+# Applied only by scripts/smoke.py to its disposable Compose project.
+services:
+  postgres:
+    ports: !reset []
+  redis:
+    ports: !reset []
+  api-gateway:
+    ports: !reset []
+  ai-service:
+    ports: !reset []
+    environment:
+      OPENAI_BASE_URL: http://smoke-provider:8010/v1
+    depends_on:
+      smoke-provider:
+        condition: service_healthy
+  document-service:
+    ports: !reset []
+    environment:
+      OPENAI_BASE_URL: http://smoke-provider:8010/v1
+    depends_on:
+      smoke-provider:
+        condition: service_healthy
+  mcp-gateway:
+    ports: !reset []
+  nginx:
+    ports: !reset []
+  smoke-provider:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    command: [python, /smoke/provider.py]
+    volumes:
+      - ./tests/smoke/provider.py:/smoke/provider.py:ro
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8010/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+networks:
+  default:
+    internal: true

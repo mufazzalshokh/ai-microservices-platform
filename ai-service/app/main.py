@@ -10,7 +10,7 @@ from shared.exceptions import AppException
 from shared.logging import configure_logging, get_logger
 
 from app.config import get_settings
-from app.routers import health, inference
+from app.routers import agent, health, inference
 
 settings = get_settings()
 configure_logging(level=settings.log_level, service_name=settings.service_name)
@@ -19,6 +19,8 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Fail startup if verification material is missing or invalid.
+    _ = settings.public_key
     logger.info(
         "service_starting",
         service=settings.service_name,
@@ -70,6 +72,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 app.include_router(health.router)
 app.include_router(inference.router, prefix="/api/v1")
+app.include_router(agent.router, prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)

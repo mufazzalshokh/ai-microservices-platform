@@ -21,10 +21,10 @@ async def health_check(
         await db.execute(text("SELECT 1"))
         checks["database"] = "ok"
         # Verify pgvector extension is available
-        await db.execute(text("SELECT extname FROM pg_extension WHERE extname = 'vector'"))
-        checks["pgvector"] = "ok"
-    except Exception as exc:
-        checks["database"] = f"error: {exc}"
+        extension = await db.scalar(text("SELECT extname FROM pg_extension WHERE extname = 'vector'"))
+        checks["pgvector"] = "ok" if extension == "vector" else "unavailable"
+    except Exception:
+        checks["database"] = "unavailable"
 
     overall = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
     return HealthResponse(

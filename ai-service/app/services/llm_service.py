@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncStream
+from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 from shared.exceptions import ServiceUnavailableError, ValidationError
 from shared.logging import get_logger
 
@@ -44,34 +45,33 @@ class LLMService:
         try:
             response = await self._client.chat.completions.create(
                 model=self._settings.llm_model,
-                messages=[
-                    {"role": m.role, "content": m.content}
-                    for m in request.messages
-                ],
+                messages=_provider_messages(request.messages),
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
                 stream=False,
             )
         except Exception as exc:
-            logger.error("llm_request_failed", error=str(exc))
+            logger.error("llm_request_failed")
             raise ServiceUnavailableError("LLM service") from exc
 
+        if not isinstance(response, ChatCompletion) or not response.choices:
+            raise ServiceUnavailableError("LLM service")
         choice = response.choices[0]
         usage = response.usage
 
         logger.info(
             "llm_chat_complete",
             model=response.model,
-            prompt_tokens=usage.prompt_tokens,
-            completion_tokens=usage.completion_tokens,
+            prompt_tokens=usage.prompt_tokens if usage else 0,
+            completion_tokens=usage.completion_tokens if usage else 0,
         )
 
         return ChatResponse(
             content=choice.message.content or "",
             model=response.model,
-            prompt_tokens=usage.prompt_tokens,
-            completion_tokens=usage.completion_tokens,
-            total_tokens=usage.total_tokens,
+            prompt_tokens=usage.prompt_tokens if usage else 0,
+            completion_tokens=usage.completion_tokens if usage else 0,
+            total_tokens=usage.total_tokens if usage else 0,
         )
 
     async def stream(
@@ -96,16 +96,17 @@ class LLMService:
         try:
             stream = await self._client.chat.completions.create(
                 model=self._settings.llm_model,
-                messages=[
-                    {"role": m.role, "content": m.content}
-                    for m in request.messages
-                ],
+                messages=_provider_messages(request.messages),
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
                 stream=True,
             )
 
+            if not isinstance(stream, AsyncStream):
+                raise ServiceUnavailableError("LLM service")
             async for chunk in stream:
+                if not chunk.choices:
+                    continue
                 delta = chunk.choices[0].delta
                 if delta.content:
                     # SSE format: "data: <content>\n\n"
@@ -114,9 +115,9 @@ class LLMService:
             # Signal stream end to client
             yield "data: [DONE]\n\n"
 
-        except Exception as exc:
-            logger.error("llm_stream_failed", error=str(exc))
-            yield f"data: [ERROR] {exc}\n\n"
+        except Exception:
+            logger.error("llm_stream_failed")
+            yield "data: [ERROR] LLM service unavailable\n\n"
 
     def _validate_messages(self, messages: list[Message]) -> None:
         """Guard against absurdly long prompts that would waste tokens."""
@@ -126,3 +127,15 @@ class LLMService:
                 f"Total prompt length ({total_chars} chars) exceeds "
                 f"maximum ({self._settings.max_prompt_length} chars)"
             )
+
+
+def _provider_messages(messages: list[Message]) -> list[ChatCompletionMessageParam]:
+    result: list[ChatCompletionMessageParam] = []
+    for message in messages:
+        if message.role == "system":
+            result.append({"role": "system", "content": message.content})
+        elif message.role == "user":
+            result.append({"role": "user", "content": message.content})
+        else:
+            result.append({"role": "assistant", "content": message.content})
+    return result

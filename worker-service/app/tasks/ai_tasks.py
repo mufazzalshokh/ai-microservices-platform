@@ -1,3 +1,8 @@
+"""Illustrative worker extension; task results do not represent persisted work.
+
+The document REST service performs the actual upload and embedding pipeline.
+These examples do not call that pipeline or persist summaries/status changes.
+"""
 from __future__ import annotations
 
 from typing import Any

@@ -19,6 +19,8 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Fail startup if verification material is missing or invalid.
+    _ = settings.public_key
     logger.info(
         "service_starting",
         service=settings.service_name,

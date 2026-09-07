@@ -1,5 +1,11 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
 [tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = [
+    "E501",
     # B008: FastAPI's Depends() pattern calls a function in argument defaults
     # by design — this is idiomatic FastAPI, not the "mutable default"
     # anti-pattern the rule targets.
@@ -13,3 +19,15 @@ ignore = [
     # catch them.
     "BLE001",
 ]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["."]

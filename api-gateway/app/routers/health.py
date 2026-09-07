@@ -20,8 +20,8 @@ async def health_check(
     try:
         await db.execute(text("SELECT 1"))
         checks["database"] = "ok"
-    except Exception as exc:
-        checks["database"] = f"error: {exc}"
+    except Exception:
+        checks["database"] = "unavailable"
 
     overall = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
     return HealthResponse(

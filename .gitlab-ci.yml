@@ -1,0 +1,31 @@
+stages: [quality, containers]
+
+quality:
+  stage: quality
+  image: python:$PYTHON_VERSION-slim
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.11", "3.12"]
+  script:
+    - python -m pip install -r requirements-dev.txt
+    - python -m pip check
+    - python scripts/check.py
+  artifacts:
+    when: always
+    reports:
+      junit: test-results.xml
+
+containers:
+  stage: containers
+  image: docker:28-cli
+  services:
+    - name: docker:28-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: /certs
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: /certs/client
+  script:
+    - docker compose --env-file .env.example --profile examples config --quiet
+    - docker compose --env-file .env.example --profile examples build

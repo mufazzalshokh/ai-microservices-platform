@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from typing import NoReturn
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from shared.exceptions import AppException
 from shared.models import APIResponse, TokenPayload
 
 from app.config import Settings, get_settings
-from app.middleware.auth import require_auth
+from app.middleware.auth import require_scopes
 from app.schemas import (
     ChatRequest,
     ChatResponse,
@@ -28,7 +30,7 @@ def _get_prompt_manager() -> PromptManager:
     return PromptManager()
 
 
-def _raise(exc: AppException) -> None:
+def _raise(exc: AppException) -> NoReturn:
     raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
 
@@ -39,7 +41,7 @@ def _raise(exc: AppException) -> None:
 )
 async def chat(
     request: ChatRequest,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("ai:invoke")),
     llm: LLMService = Depends(_get_llm),
 ) -> APIResponse[ChatResponse]:
     """
@@ -65,7 +67,7 @@ async def chat(
 )
 async def chat_stream(
     request: ChatRequest,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("ai:invoke")),
     llm: LLMService = Depends(_get_llm),
 ) -> StreamingResponse:
     """
@@ -97,7 +99,7 @@ async def chat_stream(
 )
 async def simple_prompt(
     request: SimplePromptRequest,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("ai:invoke")),
     llm: LLMService = Depends(_get_llm),
 ) -> APIResponse[ChatResponse]:
     """
@@ -128,7 +130,7 @@ async def simple_prompt(
 )
 async def simple_prompt_stream(
     request: SimplePromptRequest,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("ai:invoke")),
     llm: LLMService = Depends(_get_llm),
 ) -> StreamingResponse:
     """Streaming version of the simple prompt endpoint."""
@@ -159,7 +161,7 @@ async def simple_prompt_stream(
     response_model=APIResponse[list[dict]],
 )
 async def list_templates(
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("ai:invoke")),
     pm: PromptManager = Depends(_get_prompt_manager),
 ) -> APIResponse[list[dict]]:
     return APIResponse(data=pm.list_templates())
@@ -172,7 +174,7 @@ async def list_templates(
 )
 async def render_and_infer(
     request: RenderTemplateRequest,
-    token: TokenPayload = Depends(require_auth),
+    token: TokenPayload = Depends(require_scopes("ai:invoke")),
     llm: LLMService = Depends(_get_llm),
     pm: PromptManager = Depends(_get_prompt_manager),
 ) -> APIResponse[ChatResponse]:

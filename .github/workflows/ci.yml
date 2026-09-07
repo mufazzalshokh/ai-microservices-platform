@@ -2,51 +2,34 @@ name: CI
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: [main, develop, 'feat/**']
   pull_request:
-    branches: ["main"]
+    branches: [main]
 
 jobs:
-  test:
-    name: Run test suite
+  quality:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python: ["3.11", "3.12"]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: ${{ matrix.python }}
+          cache: pip
           cache-dependency-path: requirements-dev.txt
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements-dev.txt
-          pip install -e shared/
-
-      - name: Lint with ruff
-        run: ruff check .
-
-      - name: Run tests
-        env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: testdb
-          POSTGRES_HOST: localhost
-          JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars
-          REDIS_URL: redis://localhost:6379/0
-          AI_SERVICE_URL: http://localhost:8001
-          DOCUMENT_SERVICE_URL: http://localhost:8002
-          OPENAI_API_KEY: sk-test-placeholder
-        run: pytest tests/ -v --tb=short
-
-      - name: Upload test results
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pip check
+      - run: python scripts/check.py
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: .pytest_cache/
-          retention-days: 7
+          name: test-results-${{ matrix.python }}
+          path: test-results.xml
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file .env.example --profile examples config --quiet
+      - run: docker compose --env-file .env.example --profile examples build

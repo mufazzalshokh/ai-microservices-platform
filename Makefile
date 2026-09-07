@@ -1,4 +1,4 @@
-.PHONY: up down build logs ps test lint format clean
+.PHONY: up down build logs ps test lint check format clean
 
 up:
 	docker compose up -d
@@ -32,7 +32,6 @@ test-cov:
 
 lint:
 	ruff check .
-	mypy . --ignore-missing-imports
 
 format:
 	ruff format .
@@ -41,3 +40,6 @@ clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -name "*.pyc" -delete
 	docker compose down -v --remove-orphans
+
+check:
+	python scripts/check.py
